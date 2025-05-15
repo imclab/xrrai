@@ -1,0 +1,226 @@
+{
+  "small": {
+    "baseline": {
+      "dataSize": 10240,
+      "jsonStringifyTime": 0.047417,
+      "jsonParseTime": 0.08925,
+      "jsonSize": 8356
+    },
+    "simple": {
+      "encodeTime": 0.856,
+      "validateTime": 0.27625,
+      "decodeTime": 0.170917,
+      "fileSize": 8400,
+      "compressionRatio": "100.53%"
+    },
+    "no_compression": {
+      "encodeTime": 0.591292,
+      "validateTime": 0.171625,
+      "decodeTime": 0.314083,
+      "fileSize": 16520,
+      "compressionRatio": "197.70%"
+    },
+    "default_compression": {
+      "encodeTime": 1.464292,
+      "validateTime": 0.043875,
+      "decodeTime": 0.965666,
+      "fileSize": 11896,
+      "compressionRatio": "142.36%"
+    },
+    "max_compression": {
+      "encodeTime": 1.051166,
+      "validateTime": 0.041583,
+      "decodeTime": 0.538959,
+      "fileSize": 11896,
+      "compressionRatio": "142.36%"
+    },
+    "fast_compression": {
+      "encodeTime": 0.672958,
+      "validateTime": 0.088459,
+      "decodeTime": 0.304375,
+      "fileSize": 11948,
+      "compressionRatio": "142.99%"
+    }
+  },
+  "medium": {
+    "baseline": {
+      "dataSize": 102400,
+      "jsonStringifyTime": 0.29775,
+      "jsonParseTime": 0.409583,
+      "jsonSize": 82257
+    },
+    "simple": {
+      "encodeTime": 1.122375,
+      "validateTime": 0.618625,
+      "decodeTime": 0.424958,
+      "fileSize": 82304,
+      "compressionRatio": "100.06%"
+    },
+    "no_compression": {
+      "encodeTime": 1.494958,
+      "validateTime": 0.043583,
+      "decodeTime": 0.889209,
+      "fileSize": 164324,
+      "compressionRatio": "199.77%"
+    },
+    "default_compression": {
+      "encodeTime": 4.048583,
+      "validateTime": 0.061,
+      "decodeTime": 1.091,
+      "fileSize": 112612,
+      "compressionRatio": "136.90%"
+    },
+    "max_compression": {
+      "encodeTime": 3.448416,
+      "validateTime": 0.082666,
+      "decodeTime": 1.575542,
+      "fileSize": 112556,
+      "compressionRatio": "136.83%"
+    },
+    "fast_compression": {
+      "encodeTime": 2.017208,
+      "validateTime": 0.042084,
+      "decodeTime": 1.1125,
+      "fileSize": 113788,
+      "compressionRatio": "138.33%"
+    }
+  },
+  "large": {
+    "baseline": {
+      "dataSize": 1048576,
+      "jsonStringifyTime": 3.045542,
+      "jsonParseTime": 4.176,
+      "jsonSize": 842965
+    },
+    "simple": {
+      "encodeTime": 10.240875,
+      "validateTime": 6.25675,
+      "decodeTime": 4.041208,
+      "fileSize": 843012,
+      "compressionRatio": "100.01%"
+    },
+    "no_compression": {
+      "encodeTime": 13.177583,
+      "validateTime": 0.324958,
+      "decodeTime": 8.899458,
+      "fileSize": 1685740,
+      "compressionRatio": "199.98%"
+    },
+    "default_compression": {
+      "encodeTime": 35.578584,
+      "validateTime": 0.218792,
+      "decodeTime": 10.887042,
+      "fileSize": 1138632,
+      "compressionRatio": "135.07%"
+    },
+    "max_compression": {
+      "encodeTime": 38.6405,
+      "validateTime": 0.249292,
+      "decodeTime": 8.917375,
+      "fileSize": 1137860,
+      "compressionRatio": "134.98%"
+    },
+    "fast_compression": {
+      "encodeTime": 17.564334,
+      "validateTime": 0.226917,
+      "decodeTime": 9.133959,
+      "fileSize": 1158864,
+      "compressionRatio": "137.47%"
+    },
+    "streaming": {
+      "chunk_4096": {
+        "chunkSize": 4096,
+        "encodeTime": 39.744542,
+        "decodeTime": 329.820833,
+        "fileSize": 1138632
+      },
+      "chunk_16384": {
+        "chunkSize": 16384,
+        "encodeTime": 38.179833,
+        "decodeTime": 91.1615,
+        "fileSize": 1138632
+      },
+      "chunk_65536": {
+        "chunkSize": 65536,
+        "encodeTime": 36.306541,
+        "decodeTime": 33.427625,
+        "fileSize": 1138632
+      },
+      "chunk_262144": {
+        "chunkSize": 262144,
+        "encodeTime": 35.930708,
+        "decodeTime": 18.329375,
+        "fileSize": 1138632
+      }
+    }
+  },
+  "xlarge": {
+    "baseline": {
+      "dataSize": 10485760,
+      "jsonStringifyTime": 33.37525,
+      "jsonParseTime": 49.345708,
+      "jsonSize": 8451659
+    },
+    "simple": {
+      "encodeTime": 86.054084,
+      "validateTime": 41.474709,
+      "decodeTime": 41.594458,
+      "fileSize": 8451704,
+      "compressionRatio": "100.00%"
+    },
+    "no_compression": {
+      "encodeTime": 135.535459,
+      "validateTime": 22.824584,
+      "decodeTime": 84.172042,
+      "fileSize": 16903124,
+      "compressionRatio": "200.00%"
+    },
+    "default_compression": {
+      "encodeTime": 357.784166,
+      "validateTime": 1.383417,
+      "decodeTime": 99.117209,
+      "fileSize": 11389068,
+      "compressionRatio": "134.76%"
+    },
+    "max_compression": {
+      "encodeTime": 387.582958,
+      "validateTime": 1.962292,
+      "decodeTime": 116.969959,
+      "fileSize": 11381204,
+      "compressionRatio": "134.66%"
+    },
+    "fast_compression": {
+      "encodeTime": 172.320417,
+      "validateTime": 1.643875,
+      "decodeTime": 90.494042,
+      "fileSize": 11602380,
+      "compressionRatio": "137.28%"
+    },
+    "streaming": {
+      "chunk_4096": {
+        "chunkSize": 4096,
+        "encodeTime": 387.764875,
+        "decodeTime": 3522.282916,
+        "fileSize": 11389068
+      },
+      "chunk_16384": {
+        "chunkSize": 16384,
+        "encodeTime": 383.499667,
+        "decodeTime": 944.238125,
+        "fileSize": 11389068
+      },
+      "chunk_65536": {
+        "chunkSize": 65536,
+        "encodeTime": 350.668792,
+        "decodeTime": 310.36025,
+        "fileSize": 11389068
+      },
+      "chunk_262144": {
+        "chunkSize": 262144,
+        "encodeTime": 350.507125,
+        "decodeTime": 158.928625,
+        "fileSize": 11389068
+      }
+    }
+  }
+}

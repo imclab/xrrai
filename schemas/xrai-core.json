@@ -1,0 +1,687 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "XRAI Core Schema",
+  "description": "Schema for the XRAI (eXtended Reality AI) format",
+  "type": "object",
+  "required": ["asset", "metadata"],
+  "properties": {
+    "asset": {
+      "type": "object",
+      "description": "Asset information (similar to glTF asset property)",
+      "required": ["version"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "The version of the XRAI format used by this asset"
+        },
+        "generator": {
+          "type": "string",
+          "description": "Tool that generated this XRAI asset"
+        },
+        "copyright": {
+          "type": "string",
+          "description": "Copyright information"
+        },
+        "minVersion": {
+          "type": "string",
+          "description": "Minimum XRAI version required to load this asset"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the XRAI content",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of the content"
+        },
+        "creator": {
+          "type": "string",
+          "description": "Creator of the content"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation date (ISO 8601)"
+        },
+        "modified": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification date (ISO 8601)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the content"
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keywords associated with the content"
+        },
+        "license": {
+          "type": "string",
+          "description": "License information"
+        }
+      }
+    },
+    "extensionsUsed": {
+      "type": "array",
+      "description": "Extensions used in this asset (similar to glTF)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extensionsRequired": {
+      "type": "array",
+      "description": "Required extensions for this asset (similar to glTF)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "buffers": {
+      "type": "array",
+      "description": "Array of binary buffers (similar to glTF)",
+      "items": {
+        "type": "object",
+        "required": ["byteLength"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "URI of the buffer"
+          },
+          "byteLength": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Length of the buffer in bytes"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name for the buffer"
+          }
+        }
+      }
+    },
+    "bufferViews": {
+      "type": "array",
+      "description": "Views into buffers (similar to glTF)",
+      "items": {
+        "type": "object",
+        "required": ["buffer", "byteLength"],
+        "properties": {
+          "buffer": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Index of the buffer"
+          },
+          "byteOffset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Offset into the buffer in bytes"
+          },
+          "byteLength": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Length of the bufferView in bytes"
+          },
+          "byteStride": {
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 252,
+            "description": "Stride in bytes between vertex attributes"
+          },
+          "target": {
+            "type": "integer",
+            "description": "WebGL buffer target"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name for the bufferView"
+          }
+        }
+      }
+    },
+    "geometry": {
+      "type": "array",
+      "description": "Geometry data (meshes, point clouds, neural fields, etc.)",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the geometry"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["mesh", "splat", "nerf", "points", "volume"],
+            "description": "Type of geometry"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name for the geometry"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "type": { "enum": ["mesh"] } }
+            },
+            "then": {
+              "properties": {
+                "primitives": {
+                  "type": "array",
+                  "description": "Array of primitives (similar to glTF)",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "attributes": {
+                        "type": "object",
+                        "description": "Attributes (POSITION, NORMAL, etc.)",
+                        "additionalProperties": {
+                          "type": "integer"
+                        }
+                      },
+                      "indices": {
+                        "type": "integer",
+                        "description": "Index to accessor with indices"
+                      },
+                      "material": {
+                        "type": "integer",
+                        "description": "Index to material"
+                      },
+                      "mode": {
+                        "type": "integer",
+                        "description": "Primitive type (triangles, points, etc.)"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": { "type": { "enum": ["splat"] } }
+            },
+            "then": {
+              "properties": {
+                "splatCount": {
+                  "type": "integer",
+                  "description": "Number of Gaussian splats"
+                },
+                "positions": {
+                  "type": "integer",
+                  "description": "Index to accessor with positions"
+                },
+                "colors": {
+                  "type": "integer",
+                  "description": "Index to accessor with colors"
+                },
+                "scales": {
+                  "type": "integer",
+                  "description": "Index to accessor with scales"
+                },
+                "rotations": {
+                  "type": "integer",
+                  "description": "Index to accessor with rotations"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": { "type": { "enum": ["nerf"] } }
+            },
+            "then": {
+              "properties": {
+                "resolution": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "description": "Resolution of the neural field"
+                },
+                "networkArchitecture": {
+                  "type": "string",
+                  "description": "Type of neural network architecture"
+                },
+                "weights": {
+                  "type": "integer",
+                  "description": "Index to accessor with network weights"
+                },
+                "boundingBox": {
+                  "type": "object",
+                  "properties": {
+                    "min": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "max": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "materials": {
+      "type": "array",
+      "description": "Material definitions (similar to glTF PBR materials)",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the material"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name for the material"
+          },
+          "pbrMetallicRoughness": {
+            "type": "object",
+            "description": "PBR material properties (similar to glTF)",
+            "properties": {
+              "baseColorFactor": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4,
+                "default": [1, 1, 1, 1]
+              },
+              "baseColorTexture": {
+                "type": "object",
+                "properties": {
+                  "index": {
+                    "type": "integer"
+                  },
+                  "texCoord": {
+                    "type": "integer",
+                    "default": 0
+                  }
+                }
+              },
+              "metallicFactor": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 1
+              },
+              "roughnessFactor": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 1
+              },
+              "metallicRoughnessTexture": {
+                "type": "object",
+                "properties": {
+                  "index": {
+                    "type": "integer"
+                  },
+                  "texCoord": {
+                    "type": "integer",
+                    "default": 0
+                  }
+                }
+              }
+            }
+          },
+          "normalTexture": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "texCoord": {
+                "type": "integer",
+                "default": 0
+              },
+              "scale": {
+                "type": "number",
+                "default": 1
+              }
+            }
+          },
+          "emissiveFactor": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 3,
+            "maxItems": 3,
+            "default": [0, 0, 0]
+          },
+          "emissiveTexture": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer"
+              },
+              "texCoord": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          },
+          "alphaMode": {
+            "type": "string",
+            "enum": ["OPAQUE", "MASK", "BLEND"],
+            "default": "OPAQUE"
+          },
+          "alphaCutoff": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5
+          },
+          "doubleSided": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "accessors": {
+      "type": "array",
+      "description": "Accessors for binary data (similar to glTF)",
+      "items": {
+        "type": "object",
+        "required": ["bufferView", "componentType", "count", "type"],
+        "properties": {
+          "bufferView": {
+            "type": "integer",
+            "description": "Index of the bufferView"
+          },
+          "byteOffset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Offset into the bufferView in bytes"
+          },
+          "componentType": {
+            "type": "integer",
+            "description": "Type of the components (5120=BYTE, 5121=UNSIGNED_BYTE, etc.)"
+          },
+          "normalized": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether integer values are normalized to [0,1] or [-1,1]"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of elements"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["SCALAR", "VEC2", "VEC3", "VEC4", "MAT2", "MAT3", "MAT4"],
+            "description": "Type of the elements"
+          },
+          "max": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Maximum value of each component"
+          },
+          "min": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "description": "Minimum value of each component"
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional name for the accessor"
+          }
+        }
+      }
+    },
+    "aiComponents": {
+      "type": "object",
+      "description": "AI components unique to XRAI format",
+      "properties": {
+        "adaptationRules": {
+          "type": "array",
+          "description": "Rules for adapting content based on context",
+          "items": {
+            "type": "object",
+            "required": ["id", "condition", "action"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the rule"
+              },
+              "condition": {
+                "type": "string",
+                "description": "Condition expression"
+              },
+              "action": {
+                "type": "string",
+                "description": "Action to perform when condition is met"
+              },
+              "priority": {
+                "type": "integer",
+                "default": 0,
+                "description": "Priority of the rule (higher values take precedence)"
+              }
+            }
+          }
+        },
+        "behaviorModels": {
+          "type": "array",
+          "description": "AI behavior models",
+          "items": {
+            "type": "object",
+            "required": ["id", "type"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the model"
+              },
+              "type": {
+                "type": "string",
+                "description": "Type of behavior model"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Input parameters for the model"
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Output parameters from the model"
+              },
+              "weights": {
+                "type": "integer",
+                "description": "Index of the accessor with model weights"
+              }
+            }
+          }
+        },
+        "neuralNetworks": {
+          "type": "array",
+          "description": "Neural networks for content generation or processing",
+          "items": {
+            "type": "object",
+            "required": ["id", "architecture"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the neural network"
+              },
+              "architecture": {
+                "type": "string",
+                "description": "Neural network architecture"
+              },
+              "weights": {
+                "type": "integer",
+                "description": "Index of the accessor with network weights"
+              },
+              "inputShape": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "Shape of the input tensor"
+              },
+              "outputShape": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "description": "Shape of the output tensor"
+              }
+            }
+          }
+        }
+      }
+    },
+    "vfx": {
+      "type": "object",
+      "description": "Visual effects components",
+      "properties": {
+        "particleSystems": {
+          "type": "array",
+          "description": "Particle system definitions",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the particle system"
+              },
+              "maxParticles": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Maximum number of particles"
+              },
+              "emissionRate": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Particles emitted per second"
+              },
+              "lifetime": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Lifetime of particles in seconds"
+              },
+              "texture": {
+                "type": "integer",
+                "description": "Index of the particle texture"
+              },
+              "startColor": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4,
+                "description": "Starting color (RGBA)"
+              },
+              "endColor": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4,
+                "description": "Ending color (RGBA)"
+              },
+              "startSize": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Starting size of particles"
+              },
+              "endSize": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Ending size of particles"
+              },
+              "velocityFunction": {
+                "type": "string",
+                "description": "Function for particle velocity"
+              }
+            }
+          }
+        },
+        "shaders": {
+          "type": "array",
+          "description": "Custom shader definitions",
+          "items": {
+            "type": "object",
+            "required": ["id", "vertexShader", "fragmentShader"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the shader"
+              },
+              "vertexShader": {
+                "type": "string",
+                "description": "Vertex shader code or reference"
+              },
+              "fragmentShader": {
+                "type": "string",
+                "description": "Fragment shader code or reference"
+              },
+              "uniforms": {
+                "type": "object",
+                "description": "Uniform definitions",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "Uniform type"
+                    },
+                    "value": {
+                      "description": "Default value"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Extension objects (similar to glTF)"
+    },
+    "extras": {
+      "description": "Application-specific data (similar to glTF)"
+    }
+  }
+}

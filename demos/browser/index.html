@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XRAI Format Browser Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.2em;
+        }
+        .demo-area {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            gap: 20px;
+        }
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .viewer {
+            flex: 2;
+            min-width: 500px;
+            height: 500px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .file-upload {
+            width: 100%;
+            padding: 15px;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        .file-upload:hover {
+            background-color: #2980b9;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .sample-files {
+            margin-top: 20px;
+        }
+        .sample-file {
+            padding: 10px;
+            background-color: #ecf0f1;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .sample-file:hover {
+            background-color: #d5dbdb;
+        }
+        .info-panel {
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2em;
+        }
+        .stats {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 0.8em;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .error {
+            color: #e74c3c;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            padding: 10px;
+            background-color: #d4efdf;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .tab-button {
+            padding: 10px 15px;
+            background-color: #ecf0f1;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            transition: background-color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>XRAI Format Browser Demo</h1>
+        <p>Load, visualize, and interact with XRAI format files directly in your browser</p>
+    </header>
+    
+    <div class="container">
+        <div class="demo-area">
+            <div class="controls">
+                <label class="file-upload">
+                    <input type="file" id="file-input" accept=".xrai,.json">
+                    Upload XRAI or JSON File
+                </label>
+                
+                <div class="sample-files">
+                    <h3>Sample Files</h3>
+                    <div class="sample-file" data-file="basic-scene.xrai">Basic Scene</div>
+                    <div class="sample-file" data-file="ai-interactive.xrai">AI Interactive Demo</div>
+                    <div class="sample-file" data-file="vfx-particles.xrai">VFX Particle System</div>
+                </div>
+                
+                <div class="info-panel">
+                    <h3>File Information</h3>
+                    <div id="file-info">No file loaded</div>
+                    
+                    <div class="tab-buttons">
+                        <button class="tab-button active" data-tab="metadata">Metadata</button>
+                        <button class="tab-button" data-tab="sections">Sections</button>
+                        <button class="tab-button" data-tab="ai">AI Components</button>
+                    </div>
+                    
+                    <div class="tab-content active" id="metadata-tab">
+                        <div id="metadata-content">No metadata available</div>
+                    </div>
+                    
+                    <div class="tab-content" id="sections-tab">
+                        <div id="sections-content">No sections available</div>
+                    </div>
+                    
+                    <div class="tab-content" id="ai-tab">
+                        <div id="ai-content">No AI components available</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="viewer">
+                <div class="loading" id="loading-message">No file loaded</div>
+                <div class="stats" id="stats"></div>
+                <canvas id="render-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="xrai-browser-decoder.js"></script>
+    <script src="xrai-viewer.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize XRAI Viewer
+            const viewer = new XRAIViewer('render-canvas');
+            const decoder = new XRAIBrowserDecoder();
+            
+            // File input handling
+            const fileInput = document.getElementById('file-input');
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    loadXRAIFile(event.target.result, file.name);
+                };
+                
+                if (file.name.endsWith('.xrai')) {
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    reader.readAsText(file);
+                }
+            });
+            
+            // Sample file handling
+            const sampleFiles = document.querySelectorAll('.sample-file');
+            sampleFiles.forEach(sample => {
+                sample.addEventListener('click', function() {
+                    const fileName = this.getAttribute('data-file');
+                    fetch(`samples/${fileName}`)
+                        .then(response => {
+                            if (fileName.endsWith('.xrai')) {
+                                return response.arrayBuffer();
+                            } else {
+                                return response.text();
+                            }
+                        })
+                        .then(data => {
+                            loadXRAIFile(data, fileName);
+                        })
+                        .catch(error => {
+                            showError(`Error loading sample file: ${error.message}`);
+                        });
+                });
+            });
+            
+            // Tab handling
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    // Update active button
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active tab content
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(`${tabName}-tab`).classList.add('active');
+                });
+            });
+            
+            // Load XRAI file
+            function loadXRAIFile(data, fileName) {
+                document.getElementById('loading-message').textContent = 'Loading file...';
+                
+                try {
+                    let xraiData;
+                    
+                    if (typeof data === 'string') {
+                        // JSON data
+                        xraiData = JSON.parse(data);
+                        updateFileInfo(fileName, 'JSON', data.length);
+                    } else {
+                        // Binary XRAI data
+                        xraiData = decoder.decode(data);
+                        updateFileInfo(fileName, 'XRAI', data.byteLength);
+                    }
+                    
+                    // Update UI with file data
+                    updateMetadataTab(xraiData);
+                    updateSectionsTab(xraiData);
+                    updateAITab(xraiData);
+                    
+                    // Load into viewer
+                    viewer.loadScene(xraiData);
+                    
+                    showSuccess(`Successfully loaded ${fileName}`);
+                } catch (error) {
+                    showError(`Error loading file: ${error.message}`);
+                    document.getElementById('loading-message').textContent = 'Error loading file';
+                }
+            }
+            
+            // Update file info
+            function updateFileInfo(fileName, format, size) {
+                const sizeInKB = Math.round(size / 1024);
+                document.getElementById('file-info').innerHTML = `
+                    <strong>File:</strong> ${fileName}<br>
+                    <strong>Format:</strong> ${format}<br>
+                    <strong>Size:</strong> ${sizeInKB} KB
+                `;
+            }
+            
+            // Update metadata tab
+            function updateMetadataTab(data) {
+                const metadataContent = document.getElementById('metadata-content');
+                
+                if (data.asset) {
+                    const metadata = `
+                        <div class="section-info">
+                            <strong>Version:</strong> ${data.asset.version || 'N/A'}<br>
+                            <strong>Generator:</strong> ${data.asset.generator || 'N/A'}<br>
+                            <strong>Copyright:</strong> ${data.asset.copyright || 'N/A'}
+                        </div>
+                        
+                        <h4>Metadata</h4>
+                        <pre>${JSON.stringify(data.metadata || {}, null, 2)}</pre>
+                    `;
+                    metadataContent.innerHTML = metadata;
+                } else {
+                    metadataContent.innerHTML = 'No metadata available';
+                }
+            }
+            
+            // Update sections tab
+            function updateSectionsTab(data) {
+                const sectionsContent = document.getElementById('sections-content');
+                
+                // Get all top-level keys except asset and metadata
+                const sections = Object.keys(data).filter(key => 
+                    key !== 'asset' && key !== 'metadata' && key !== '_format' && !key.startsWith('_')
+                );
+                
+                if (sections.length > 0) {
+                    let sectionsHtml = '<h4>Available Sections</h4>';
+                    
+                    sections.forEach(section => {
+                        const sectionData = data[section];
+                        const sectionType = Array.isArray(sectionData) ? 'Array' : typeof sectionData;
+                        const sectionSize = JSON.stringify(sectionData).length;
+                        
+                        sectionsHtml += `
+                            <div class="section-info">
+                                <strong>${section}</strong> (${sectionType}, ~${Math.round(sectionSize / 1024)} KB)
+                            </div>
+                        `;
+                    });
+                    
+                    sectionsContent.innerHTML = sectionsHtml;
+                } else {
+                    sectionsContent.innerHTML = 'No sections available';
+                }
+            }
+            
+            // Update AI tab
+            function updateAITab(data) {
+                const aiContent = document.getElementById('ai-content');
+                
+                if (data.aiComponents) {
+                    aiContent.innerHTML = `
+                        <h4>AI Components</h4>
+                        <pre>${JSON.stringify(data.aiComponents, null, 2)}</pre>
+                    `;
+                } else {
+                    aiContent.innerHTML = 'No AI components available';
+                }
+            }
+            
+            // Show error message
+            function showError(message) {
+                const fileInfo = document.getElementById('file-info');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                
+                // Remove any existing error or success messages
+                const existingMessages = fileInfo.querySelectorAll('.error, .success');
+                existingMessages.forEach(msg => msg.remove());
+                
+                fileInfo.appendChild(errorDiv);
+            }
+            
+            // Show success message
+            function showSuccess(message) {
+                const fileInfo = document.getElementById('file-info');
+                const successDiv = document.createElement('div');
+                successDiv.className = 'success';
+                successDiv.textContent = message;
+                
+                // Remove any existing error or success messages
+                const existingMessages = fileInfo.querySelectorAll('.error, .success');
+                existingMessages.forEach(msg => msg.remove());
+                
+                fileInfo.appendChild(successDiv);
+            }
+        });
+    </script>
+</body>
+</html>

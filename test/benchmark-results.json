@@ -1,0 +1,62 @@
+{
+  "small": {
+    "dataSize": 10240,
+    "xraiValidateTime": 0.255167,
+    "xraiDecodeTime": 0.226291,
+    "validationResult": true,
+    "jsonStringifyTime": 0.038083,
+    "jsonParseTime": 0.106292,
+    "jsonSize": 8353,
+    "xraiEncodeTime": 1.037041,
+    "xraiSize": 8400,
+    "compressionRatio": "100.56%",
+    "jsonMemoryUsage": 32752,
+    "xraiMemoryUsage": 50872,
+    "memoryRatio": "155.32%"
+  },
+  "medium": {
+    "dataSize": 102400,
+    "xraiValidateTime": 2.667833,
+    "xraiDecodeTime": 0.559167,
+    "validationResult": true,
+    "jsonStringifyTime": 0.325667,
+    "jsonParseTime": 0.474708,
+    "jsonSize": 82286,
+    "xraiEncodeTime": 1.385875,
+    "xraiSize": 82332,
+    "compressionRatio": "100.06%",
+    "jsonMemoryUsage": 286856,
+    "xraiMemoryUsage": 303184,
+    "memoryRatio": "105.69%"
+  },
+  "large": {
+    "dataSize": 1048576,
+    "xraiValidateTime": 3.679792,
+    "xraiDecodeTime": 3.482333,
+    "validationResult": true,
+    "jsonStringifyTime": 3.020333,
+    "jsonParseTime": 4.419417,
+    "jsonSize": 842731,
+    "xraiEncodeTime": 9.160792,
+    "xraiSize": 842776,
+    "compressionRatio": "100.01%",
+    "jsonMemoryUsage": 2929512,
+    "xraiMemoryUsage": 2934312,
+    "memoryRatio": "100.16%"
+  },
+  "xlarge": {
+    "dataSize": 10485760,
+    "xraiValidateTime": 47.300958,
+    "xraiDecodeTime": 43.044542,
+    "validationResult": true,
+    "jsonStringifyTime": 32.195125,
+    "jsonParseTime": 43.299542,
+    "jsonSize": 8451386,
+    "xraiEncodeTime": 88.201625,
+    "xraiSize": 8451432,
+    "compressionRatio": "100.00%",
+    "jsonMemoryUsage": 22741312,
+    "xraiMemoryUsage": 25184912,
+    "memoryRatio": "110.75%"
+  }
+}

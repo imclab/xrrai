@@ -1,0 +1,108 @@
+{
+  "metadata": {
+    "title": "Test Cube Scene",
+    "description": "A simple test scene with a rotating cube",
+    "version": "1.0.0",
+    "author": "XRAI Format Demo"
+  },
+  "materials": [
+    {
+      "id": "red-material",
+      "color": "#ff0000",
+      "roughness": 0.5,
+      "metalness": 0.2
+    }
+  ],
+  "objects": [
+    {
+      "id": "test-cube",
+      "name": "TestCube",
+      "geometry": {
+        "type": "box",
+        "width": 1,
+        "height": 1,
+        "depth": 1
+      },
+      "material": "red-material",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 45,
+        "z": 0
+      }
+    },
+    {
+      "id": "ground-plane",
+      "name": "Ground",
+      "geometry": {
+        "type": "plane",
+        "width": 10,
+        "height": 10
+      },
+      "material": "red-material",
+      "position": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "rotation": {
+        "x": -90,
+        "y": 0,
+        "z": 0
+      }
+    }
+  ],
+  "ai": {
+    "neuralNetworks": [
+      {
+        "id": "cube-controller",
+        "type": "regressor",
+        "config": {
+          "inputs": ["time", "cameraDistance"],
+          "outputs": ["rotationSpeed", "colorValue"]
+        }
+      }
+    ],
+    "adaptiveObjects": [
+      {
+        "id": "test-cube",
+        "name": "TestCube",
+        "networks": ["cube-controller"],
+        "adaptiveProperties": [
+          {
+            "property": "rotation",
+            "network": "cube-controller",
+            "axis": {"x": 0, "y": 1, "z": 0},
+            "speed": 1.0
+          },
+          {
+            "property": "color",
+            "network": "cube-controller",
+            "colorA": {"r": 1, "g": 0, "b": 0},
+            "colorB": {"r": 0, "g": 0, "b": 1}
+          }
+        ],
+        "initialState": {
+          "rotationSpeed": 1.0,
+          "colorValue": 0.5
+        }
+      }
+    ],
+    "adaptationRules": [
+      {
+        "description": "Cube rotates faster when camera is closer",
+        "condition": "distanceToCamera < 5",
+        "action": "rotationSpeed = 2.0 - (distanceToCamera / 5.0)"
+      },
+      {
+        "description": "Cube color shifts based on time",
+        "condition": "true",
+        "action": "colorValue = (Math.sin(time) + 1) / 2"
+      }
+    ]
+  }
+}

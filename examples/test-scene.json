@@ -1,0 +1,56 @@
+{
+  "asset": {
+    "version": "1.0",
+    "generator": "XRAI Format Tools",
+    "copyright": "Copyright 2025 XRAI Format Team"
+  },
+  "metadata": {
+    "title": "Test XRAI Scene",
+    "creator": "XRAI Format Team",
+    "version": "1.0",
+    "created": "2025-05-15T08:15:09Z",
+    "description": "A simple test scene for the XRAI format"
+  },
+  "geometry": [
+    {
+      "id": "cube",
+      "type": "mesh",
+      "vertices": [
+        [-0.5, -0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5, 0.5, -0.5],
+        [-0.5, 0.5, -0.5],
+        [-0.5, -0.5, 0.5],
+        [0.5, -0.5, 0.5],
+        [0.5, 0.5, 0.5],
+        [-0.5, 0.5, 0.5]
+      ],
+      "triangles": [
+        [0, 1, 2], [0, 2, 3],
+        [4, 5, 6], [4, 6, 7],
+        [0, 1, 5], [0, 5, 4],
+        [2, 3, 7], [2, 7, 6],
+        [0, 3, 7], [0, 7, 4],
+        [1, 2, 6], [1, 6, 5]
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "id": "default_material",
+      "type": "standard",
+      "color": [0, 1, 0],
+      "metalness": 0.1,
+      "roughness": 0.5
+    }
+  ],
+  "aiComponents": {
+    "adaptationRules": [
+      {
+        "id": "performance_adaptation",
+        "condition": "context.performance < 30",
+        "action": "reduceQuality(0.5)"
+      }
+    ]
+  }
+}

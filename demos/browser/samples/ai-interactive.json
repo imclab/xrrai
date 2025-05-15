@@ -1,0 +1,409 @@
+{
+  "asset": {
+    "version": "1.0",
+    "generator": "XRAI Format Demo",
+    "copyright": "Copyright 2025 XRAI Format"
+  },
+  "metadata": {
+    "title": "AI Interactive Demo",
+    "description": "An interactive scene demonstrating the AI capabilities of the XRAI format",
+    "author": "XRAI Format Team",
+    "created": "2025-05-15T11:14:55-04:00"
+  },
+  "geometry": [
+    {
+      "id": "cube",
+      "type": "box",
+      "width": 1.0,
+      "height": 1.0,
+      "depth": 1.0
+    },
+    {
+      "id": "sphere",
+      "type": "sphere",
+      "radius": 0.5,
+      "widthSegments": 32,
+      "heightSegments": 16
+    },
+    {
+      "id": "plane",
+      "type": "plane",
+      "width": 20.0,
+      "height": 20.0
+    },
+    {
+      "id": "torus",
+      "type": "mesh",
+      "vertices": [
+        1.0, 0.0, 0.25,  1.0, 0.0, -0.25,  0.866, 0.5, 0.25,  0.866, 0.5, -0.25,
+        0.5, 0.866, 0.25,  0.5, 0.866, -0.25,  0.0, 1.0, 0.25,  0.0, 1.0, -0.25,
+        -0.5, 0.866, 0.25,  -0.5, 0.866, -0.25,  -0.866, 0.5, 0.25,  -0.866, 0.5, -0.25,
+        -1.0, 0.0, 0.25,  -1.0, 0.0, -0.25,  -0.866, -0.5, 0.25,  -0.866, -0.5, -0.25,
+        -0.5, -0.866, 0.25,  -0.5, -0.866, -0.25,  0.0, -1.0, 0.25,  0.0, -1.0, -0.25,
+        0.5, -0.866, 0.25,  0.5, -0.866, -0.25,  0.866, -0.5, 0.25,  0.866, -0.5, -0.25
+      ],
+      "triangles": [
+        [0, 2, 1], [1, 2, 3], [2, 4, 3], [3, 4, 5], [4, 6, 5], [5, 6, 7],
+        [6, 8, 7], [7, 8, 9], [8, 10, 9], [9, 10, 11], [10, 12, 11], [11, 12, 13],
+        [12, 14, 13], [13, 14, 15], [14, 16, 15], [15, 16, 17], [16, 18, 17], [17, 18, 19],
+        [18, 20, 19], [19, 20, 21], [20, 22, 21], [21, 22, 23], [22, 0, 23], [23, 0, 1]
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "id": "adaptive_material",
+      "type": "standard",
+      "color": [0.8, 0.2, 0.2],
+      "metalness": 0.5,
+      "roughness": 0.3,
+      "emissive": [0.2, 0.0, 0.0]
+    },
+    {
+      "id": "interactive_material",
+      "type": "standard",
+      "color": [0.2, 0.6, 1.0],
+      "metalness": 0.7,
+      "roughness": 0.2,
+      "emissive": [0.0, 0.1, 0.3]
+    },
+    {
+      "id": "reactive_material",
+      "type": "standard",
+      "color": [0.3, 0.8, 0.4],
+      "metalness": 0.3,
+      "roughness": 0.4,
+      "emissive": [0.0, 0.2, 0.0]
+    },
+    {
+      "id": "floor_material",
+      "type": "standard",
+      "color": [0.05, 0.05, 0.05],
+      "metalness": 0.1,
+      "roughness": 0.9
+    }
+  ],
+  "scene": {
+    "nodes": [
+      {
+        "id": "floor",
+        "name": "Floor",
+        "type": "mesh",
+        "geometry": "plane",
+        "material": "floor_material",
+        "position": [0, -0.5, 0],
+        "rotation": [-90, 0, 0],
+        "scale": [1, 1, 1]
+      },
+      {
+        "id": "adaptive_object",
+        "name": "Adaptive Cube",
+        "type": "mesh",
+        "geometry": "cube",
+        "material": "adaptive_material",
+        "position": [-2.5, 0.5, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1]
+      },
+      {
+        "id": "interactive_object",
+        "name": "Interactive Sphere",
+        "type": "mesh",
+        "geometry": "sphere",
+        "material": "interactive_material",
+        "position": [0, 0.5, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1]
+      },
+      {
+        "id": "reactive_object",
+        "name": "Reactive Torus",
+        "type": "mesh",
+        "geometry": "torus",
+        "material": "reactive_material",
+        "position": [2.5, 0.5, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1]
+      },
+      {
+        "id": "main_light",
+        "name": "Main Light",
+        "type": "light",
+        "lightType": "directional",
+        "color": [1, 1, 0.9],
+        "intensity": 0.8,
+        "position": [5, 10, 5],
+        "rotation": [-45, 45, 0]
+      },
+      {
+        "id": "ambient_light",
+        "name": "Ambient Light",
+        "type": "light",
+        "lightType": "point",
+        "color": [0.2, 0.3, 0.5],
+        "intensity": 0.4,
+        "position": [0, 3, 0],
+        "rotation": [0, 0, 0]
+      },
+      {
+        "id": "ai_controller",
+        "name": "AI Controller",
+        "type": "group",
+        "position": [0, 0, 0],
+        "rotation": [0, 0, 0],
+        "scale": [1, 1, 1],
+        "children": [
+          {
+            "id": "ai_indicator",
+            "name": "AI Indicator",
+            "type": "mesh",
+            "geometry": "sphere",
+            "material": "interactive_material",
+            "position": [0, 3, 0],
+            "rotation": [0, 0, 0],
+            "scale": [0.2, 0.2, 0.2]
+          }
+        ]
+      }
+    ]
+  },
+  "aiComponents": {
+    "adaptationRules": [
+      {
+        "id": "performance_adaptation",
+        "condition": "performance.fps < 30",
+        "action": "adjustQuality(0.5)",
+        "priority": 100
+      },
+      {
+        "id": "distance_adaptation",
+        "condition": "camera.distance > 8",
+        "action": "setLOD(1)",
+        "priority": 80
+      },
+      {
+        "id": "proximity_adaptation",
+        "condition": "camera.distance < 3",
+        "action": "setLOD(0)",
+        "priority": 90
+      },
+      {
+        "id": "cube_color_adaptation",
+        "condition": "time % 10 < 5",
+        "action": "setMaterialProperty('adaptive_material', 'color', [0.8, 0.2, 0.2])",
+        "priority": 50
+      },
+      {
+        "id": "cube_color_adaptation_alt",
+        "condition": "time % 10 >= 5",
+        "action": "setMaterialProperty('adaptive_material', 'color', [0.2, 0.2, 0.8])",
+        "priority": 50
+      },
+      {
+        "id": "interaction_feedback",
+        "condition": "input.mousePressed",
+        "action": "debug('User interaction detected')",
+        "priority": 20
+      }
+    ],
+    "behaviorModels": [
+      {
+        "id": "adaptive_cube_behavior",
+        "type": "state",
+        "inputs": ["time", "camera.distance", "input.mousePosition.x"],
+        "outputs": ["cube_rotation_x", "cube_rotation_y", "cube_rotation_z", "cube_scale"],
+        "parameters": {
+          "currentState": "idle",
+          "transition_idle_active": {
+            "condition": "camera.distance < 4",
+            "target": "active"
+          },
+          "transition_active_idle": {
+            "condition": "camera.distance > 6",
+            "target": "idle"
+          },
+          "transition_active_interactive": {
+            "condition": "input.mousePressed",
+            "target": "interactive"
+          },
+          "transition_interactive_active": {
+            "condition": "time % 5 < 0.1",
+            "target": "active"
+          },
+          "action_idle": "debug('Cube is idle')",
+          "action_active": "debug('Cube is active')",
+          "action_interactive": "debug('Cube is interactive')",
+          "value_idle_0": 0,
+          "value_idle_1": 0.2,
+          "value_idle_2": 0,
+          "value_idle_3": 1.0,
+          "value_active_0": 0.5,
+          "value_active_1": 0.5,
+          "value_active_2": 0.5,
+          "value_active_3": 1.2,
+          "value_interactive_0": 1.0,
+          "value_interactive_1": 1.0,
+          "value_interactive_2": 1.0,
+          "value_interactive_3": 1.5
+        }
+      },
+      {
+        "id": "interactive_sphere_behavior",
+        "type": "regression",
+        "inputs": ["time", "camera.distance", "input.mousePosition.y"],
+        "outputs": ["sphere_scale", "sphere_emissive_intensity"],
+        "parameters": {
+          "weight_0_0": 0.1,
+          "weight_1_0": -0.05,
+          "weight_2_0": 0.001,
+          "bias_0": 1.0,
+          "activation_0": "sin",
+          "weight_0_1": 0.2,
+          "weight_1_1": -0.02,
+          "weight_2_1": 0.0005,
+          "bias_1": 0.5,
+          "activation_1": "sigmoid"
+        }
+      },
+      {
+        "id": "reactive_torus_behavior",
+        "type": "classification",
+        "inputs": ["time", "performance.fps", "input.mousePosition.x"],
+        "outputs": ["torus_rotation_speed", "torus_visible", "torus_emissive"],
+        "parameters": {
+          "weight_0_0": 0.1,
+          "weight_1_0": 0.01,
+          "weight_2_0": 0.001,
+          "threshold_0": 0.5,
+          "weight_0_1": 0.05,
+          "weight_1_1": 0.02,
+          "weight_2_1": 0.002,
+          "threshold_1": 0.7,
+          "weight_0_2": 0.2,
+          "weight_1_2": -0.01,
+          "weight_2_2": 0.003,
+          "threshold_2": 0.6
+        }
+      }
+    ],
+    "neuralNetworks": [
+      {
+        "id": "simple_mlp",
+        "type": "mlp",
+        "inputs": ["time", "camera.distance", "performance.fps"],
+        "outputs": ["ai_indicator_scale", "ai_indicator_color_r", "ai_indicator_color_g", "ai_indicator_color_b"],
+        "architecture": {
+          "layers": [
+            {"size": 3, "activation": "none"},
+            {"size": 8, "activation": "relu"},
+            {"size": 4, "activation": "sigmoid"}
+          ]
+        },
+        "weights": [
+          [0.1, 0.2, -0.1, 0.3, 0.1, -0.2, 0.4, 0.1],
+          [-0.2, 0.1, 0.3, -0.1, 0.2, 0.1, -0.3, 0.2],
+          [0.3, -0.1, 0.2, 0.1, -0.2, 0.3, 0.1, -0.1]
+        ],
+        "biases": [
+          [0.1, -0.1, 0.2, -0.2, 0.1, -0.1, 0.2, -0.2],
+          [0.5, 0.3, 0.2, 0.1]
+        ]
+      }
+    ]
+  },
+  "vfx": {
+    "particleSystems": [
+      {
+        "id": "adaptive_particles",
+        "emitterType": "sphere",
+        "position": [-2.5, 0.5, 0],
+        "size": 0.2,
+        "rate": 10,
+        "lifetime": 2.0,
+        "startSize": 0.05,
+        "endSize": 0.01,
+        "startColor": [0.8, 0.2, 0.2, 1.0],
+        "endColor": [0.8, 0.2, 0.2, 0.0],
+        "velocity": 0.5,
+        "gravity": -0.1,
+        "adaptiveParameters": {
+          "rate": {
+            "input": "camera.distance",
+            "mapping": "inverse",
+            "min": 5,
+            "max": 30
+          },
+          "startSize": {
+            "input": "performance.fps",
+            "mapping": "inverse",
+            "min": 0.02,
+            "max": 0.1
+          }
+        }
+      },
+      {
+        "id": "interactive_particles",
+        "emitterType": "circle",
+        "position": [0, 0.5, 0],
+        "size": 0.5,
+        "rate": 20,
+        "lifetime": 1.5,
+        "startSize": 0.03,
+        "endSize": 0.01,
+        "startColor": [0.2, 0.6, 1.0, 1.0],
+        "endColor": [0.2, 0.6, 1.0, 0.0],
+        "velocity": 0.3,
+        "gravity": 0.0,
+        "adaptiveParameters": {
+          "rate": {
+            "input": "sphere_scale",
+            "mapping": "direct",
+            "min": 10,
+            "max": 50
+          },
+          "startColor": {
+            "input": "sphere_emissive_intensity",
+            "mapping": "direct",
+            "component": "rgb",
+            "min": [0.1, 0.3, 0.5],
+            "max": [0.3, 0.7, 1.0]
+          }
+        }
+      }
+    ],
+    "effects": [
+      {
+        "id": "glow_effect",
+        "type": "bloom",
+        "intensity": 1.0,
+        "threshold": 0.8,
+        "radius": 0.5,
+        "adaptiveParameters": {
+          "intensity": {
+            "input": "performance.fps",
+            "mapping": "inverse",
+            "min": 0.5,
+            "max": 1.5
+          }
+        }
+      },
+      {
+        "id": "color_correction",
+        "type": "colorGrading",
+        "temperature": 0.0,
+        "tint": 0.0,
+        "saturation": 1.0,
+        "contrast": 1.0,
+        "adaptiveParameters": {
+          "temperature": {
+            "input": "time",
+            "mapping": "sin",
+            "frequency": 0.1,
+            "min": -0.2,
+            "max": 0.2
+          }
+        }
+      }
+    ]
+  }
+}

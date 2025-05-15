@@ -1,0 +1,37 @@
+{
+  "name": "xrai-format",
+  "version": "0.1.0",
+  "description": "Tools and examples for the XRAI (eXtended Reality AI) format",
+  "main": "index.js",
+  "bin": {
+    "xrai": "./tools/xrai-cli.js"
+  },
+  "scripts": {
+    "start": "node ./tools/xrai-cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "xrai",
+    "extended reality",
+    "ar",
+    "vr",
+    "3d",
+    "ai",
+    "spatial",
+    "media",
+    "gaussian splats",
+    "nerf"
+  ],
+  "author": "XRAI Format Team",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^9.5.0",
+    "three": "^0.150.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.36.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

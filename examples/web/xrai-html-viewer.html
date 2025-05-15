@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XRAI Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+    }
+    
+    #xrai-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .ui-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 5px;
+      padding: 10px;
+      z-index: 100;
+    }
+    
+    .ui-panel button {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 3px;
+      padding: 5px 10px;
+      margin: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .ui-panel button:hover {
+      background: #444;
+    }
+    
+    .ui-panel select {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 3px;
+      padding: 5px;
+      margin: 2px;
+    }
+    
+    .info-panel {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 5px;
+      padding: 10px;
+      max-width: 300px;
+    }
+    
+    .loading-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .loading-screen h2 {
+      margin-bottom: 20px;
+    }
+    
+    .progress-bar {
+      width: 300px;
+      height: 5px;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+      height: 100%;
+      background: #0095ff;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    .error-message {
+      color: #ff5555;
+      margin-top: 20px;
+      text-align: center;
+      max-width: 80%;
+    }
+    
+    .stats {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="xrai-container"></div>
+  
+  <div class="loading-screen" id="loading-screen">
+    <h2>Loading XRAI Scene</h2>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+    <div id="loading-text">Initializing...</div>
+  </div>
+  
+  <div class="ui-panel">
+    <div>
+      <button id="reset-camera">Reset Camera</button>
+      <button id="toggle-wireframe">Wireframe</button>
+    </div>
+    <div>
+      <label for="quality-slider">Quality:</label>
+      <input type="range" id="quality-slider" min="0" max="1" step="0.1" value="1">
+    </div>
+    <div>
+      <label for="view-mode">View Mode:</label>
+      <select id="view-mode">
+        <option value="normal">Normal</option>
+        <option value="wireframe">Wireframe</option>
+        <option value="points">Points</option>
+        <option value="normals">Normals</option>
+      </select>
+    </div>
+    <div>
+      <button id="toggle-ai">Toggle AI</button>
+      <button id="toggle-vfx">Toggle VFX</button>
+    </div>
+  </div>
+  
+  <div class="info-panel" id="info-panel">
+    <h3 id="scene-title">Untitled Scene</h3>
+    <p id="scene-description">No description available.</p>
+    <div id="scene-metadata"></div>
+  </div>
+  
+  <div class="stats" id="stats">
+    FPS: 0 | Triangles: 0 | Draw calls: 0
+  </div>
+  
+  <!-- Import Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Import XRAI Viewer and components -->
+  <script src="xrai-viewer.js"></script>
+  <script src="splat-geometry.js"></script>
+  <script src="nerf-renderer.js"></script>
+  <script src="adaptation-controller.js"></script>
+  
+  <script>
+    // Main viewer application
+    class XRAIViewer {
+      constructor() {
+        this.container = document.getElementById('xrai-container');
+        this.scene = null;
+        this.renderer = null;
+        this.camera = null;
+        this.controls = null;
+        this.clock = new THREE.Clock();
+        this.stats = {
+          fps: 0,
+          triangles: 0,
+          drawCalls: 0,
+          lastTime: performance.now()
+        };
+        
+        // Initialize UI elements
+        this.loadingScreen = document.getElementById('loading-screen');
+        this.progressBar = document.getElementById('progress-bar-fill');
+        this.loadingText = document.getElementById('loading-text');
+        this.infoPanel = document.getElementById('info-panel');
+        this.sceneTitle = document.getElementById('scene-title');
+        this.sceneDescription = document.getElementById('scene-description');
+        this.sceneMetadata = document.getElementById('scene-metadata');
+        this.statsElement = document.getElementById('stats');
+        
+        // Initialize UI controls
+        this.qualitySlider = document.getElementById('quality-slider');
+        this.viewModeSelect = document.getElementById('view-mode');
+        this.resetCameraButton = document.getElementById('reset-camera');
+        this.toggleWireframeButton = document.getElementById('toggle-wireframe');
+        this.toggleAIButton = document.getElementById('toggle-ai');
+        this.toggleVFXButton = document.getElementById('toggle-vfx');
+        
+        // Initialize settings
+        this.settings = {
+          quality: 1.0,
+          viewMode: 'normal',
+          wireframe: false,
+          aiEnabled: true,
+          vfxEnabled: true
+        };
+        
+        // Initialize Three.js
+        this.initThree();
+        
+        // Initialize UI events
+        this.initUIEvents();
+        
+        // Start animation loop
+        this.animate();
+      }
+      
+      initThree() {
+        // Create scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x111111);
+        
+        // Create camera
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 1.7, 5);
+        
+        // Create renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
+        
+        // Create controls
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        this.scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 2, 3);
+        directionalLight.castShadow = true;
+        this.scene.add(directionalLight);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+        
+        // Add a grid for reference
+        const grid = new THREE.GridHelper(10, 10, 0x555555, 0x333333);
+        this.scene.add(grid);
+      }
+      
+      initUIEvents() {
+        // Quality slider
+        this.qualitySlider.addEventListener('input', (e) => {
+          this.settings.quality = parseFloat(e.target.value);
+          if (this.xraiScene) {
+            this.xraiScene.setQuality(this.settings.quality);
+          }
+        });
+        
+        // View mode select
+        this.viewModeSelect.addEventListener('change', (e) => {
+          this.settings.viewMode = e.target.value;
+          this.updateViewMode();
+        });
+        
+        // Reset camera button
+        this.resetCameraButton.addEventListener('click', () => {
+          this.resetCamera();
+        });
+        
+        // Toggle wireframe button
+        this.toggleWireframeButton.addEventListener('click', () => {
+          this.settings.wireframe = !this.settings.wireframe;
+          this.updateViewMode();
+        });
+        
+        // Toggle AI button
+        this.toggleAIButton.addEventListener('click', () => {
+          this.settings.aiEnabled = !this.settings.aiEnabled;
+          if (this.xraiScene) {
+            this.xraiScene.setAIEnabled(this.settings.aiEnabled);
+          }
+        });
+        
+        // Toggle VFX button
+        this.toggleVFXButton.addEventListener('click', () => {
+          this.settings.vfxEnabled = !this.settings.vfxEnabled;
+          if (this.xraiScene) {
+            this.xraiScene.setVFXEnabled(this.settings.vfxEnabled);
+          }
+        });
+        
+        // Add click event for interaction
+        this.renderer.domElement.addEventListener('click', (e) => this.onSceneClick(e));
+      }
+      
+      loadXRAIFile(url) {
+        this.showLoading('Loading XRAI file...');
+        
+        // Create loader
+        const loader = new XRAILoader({
+          useGPU: true,
+          adaptiveQuality: true,
+          aiEnhancement: this.settings.aiEnabled
+        });
+        
+        // Set up progress callback
+        loader.onProgress = (progress, message) => {
+          this.updateLoadingProgress(progress, message);
+        };
+        
+        // Load XRAI file
+        loader.load(url)
+          .then(result => {
+            this.onXRAILoaded(result);
+          })
+          .catch(error => {
+            this.showError(`Error loading XRAI file: ${error.message}`);
+            console.error('XRAI loading error:', error);
+          });
+      }
+      
+      onXRAILoaded(result) {
+        console.log('XRAI scene loaded:', result);
+        
+        // Store the XRAI scene
+        this.xraiScene = result.scene;
+        
+        // Update UI with metadata
+        this.updateMetadataUI(result.metadata);
+        
+        // Add scene to Three.js scene
+        if (result.threeObject) {
+          this.scene.add(result.threeObject);
+        }
+        
+        // Set initial quality
+        this.xraiScene.setQuality(this.settings.quality);
+        
+        // Hide loading screen
+        this.hideLoading();
+      }
+      
+      updateMetadataUI(metadata) {
+        this.sceneTitle.textContent = metadata.title || 'Untitled Scene';
+        this.sceneDescription.textContent = metadata.description || 'No description available.';
+        
+        // Build metadata display
+        let metadataHTML = '';
+        if (metadata.creator) {
+          metadataHTML += `<p><strong>Creator:</strong> ${metadata.creator}</p>`;
+        }
+        if (metadata.created) {
+          metadataHTML += `<p><strong>Created:</strong> ${new Date(metadata.created).toLocaleDateString()}</p>`;
+        }
+        if (metadata.version) {
+          metadataHTML += `<p><strong>Version:</strong> ${metadata.version}</p>`;
+        }
+        
+        this.sceneMetadata.innerHTML = metadataHTML;
+      }
+      
+      updateViewMode() {
+        if (!this.xraiScene) return;
+        
+        // Apply view mode
+        this.xraiScene.setViewMode(this.settings.viewMode);
+        
+        // Apply wireframe setting
+        this.xraiScene.setWireframe(this.settings.wireframe);
+      }
+      
+      resetCamera() {
+        // Reset camera to default position
+        this.camera.position.set(0, 1.7, 5);
+        this.camera.lookAt(0, 0, 0);
+        this.controls.reset();
+      }
+      
+      onSceneClick(event) {
+        if (!this.xraiScene) return;
+        
+        // Calculate mouse position in normalized device coordinates (-1 to +1)
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        // Create raycaster
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({ x, y }, this.camera);
+        
+        // Check for intersections
+        const intersects = raycaster.intersectObjects(this.scene.children, true);
+        
+        if (intersects.length > 0) {
+          const hit = intersects[0];
+          
+          // Trigger interaction in XRAI scene
+          this.xraiScene.triggerInteraction({
+            type: 'click',
+            position: hit.point.toArray(),
+            normal: hit.face ? hit.face.normal.toArray() : [0, 1, 0],
+            distance: hit.distance,
+            object: hit.object.name || 'unknown'
+          });
+          
+          // Trigger VFX at hit point (example)
+          if (this.settings.vfxEnabled) {
+            this.xraiScene.triggerVFX('click_effect', hit.point.toArray());
+          }
+        }
+      }
+      
+      animate() {
+        requestAnimationFrame(() => this.animate());
+        
+        const deltaTime = this.clock.getDelta();
+        
+        // Update controls
+        this.controls.update();
+        
+        // Update XRAI scene if loaded
+        if (this.xraiScene) {
+          // Update scene context
+          this.xraiScene.updateContext({
+            time: this.clock.elapsedTime,
+            deltaTime: deltaTime,
+            viewPosition: this.camera.position.toArray(),
+            viewDirection: this.camera.getWorldDirection(new THREE.Vector3()).toArray(),
+            performance: this.stats.fps
+          });
+          
+          // Update scene
+          this.xraiScene.update(deltaTime);
+        }
+        
+        // Render scene
+        this.renderer.render(this.scene, this.camera);
+        
+        // Update stats
+        this.updateStats();
+      }
+      
+      updateStats() {
+        const now = performance.now();
+        const frameTime = now - this.stats.lastTime;
+        this.stats.lastTime = now;
+        
+        // Calculate FPS
+        this.stats.fps = Math.round(1000 / frameTime);
+        
+        // Get renderer info
+        const info = this.renderer.info;
+        this.stats.triangles = info.render.triangles;
+        this.stats.drawCalls = info.render.calls;
+        
+        // Update stats display
+        this.statsElement.textContent = `FPS: ${this.stats.fps} | Triangles: ${this.stats.triangles} | Draw calls: ${this.stats.drawCalls}`;
+      }
+      
+      onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      
+      showLoading(message) {
+        this.loadingScreen.style.display = 'flex';
+        this.loadingText.textContent = message || 'Loading...';
+        this.progressBar.style.width = '0%';
+      }
+      
+      updateLoadingProgress(progress, message) {
+        this.progressBar.style.width = `${progress * 100}%`;
+        if (message) {
+          this.loadingText.textContent = message;
+        }
+      }
+      
+      hideLoading() {
+        this.loadingScreen.style.display = 'none';
+      }
+      
+      showError(message) {
+        this.loadingText.innerHTML = `<div class="error-message">${message}</div>`;
+        this.progressBar.style.width = '100%';
+        this.progressBar.style.background = '#ff5555';
+      }
+    }
+    
+    // Initialize viewer when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      // Create viewer
+      const viewer = new XRAIViewer();
+      
+      // Check for URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const xraiFile = urlParams.get('file');
+      
+      if (xraiFile) {
+        // Load file from URL parameter
+        viewer.loadXRAIFile(xraiFile);
+      } else {
+        // Show file picker or load demo
+        const demoFile = 'demo.xrai';
+        console.log(`No file specified, loading demo: ${demoFile}`);
+        viewer.loadXRAIFile(demoFile);
+      }
+      
+      // Expose viewer to console for debugging
+      window.viewer = viewer;
+    });
+    
+    // Mock XRAILoader for demo purposes
+    class XRAILoader {
+      constructor(options = {}) {
+        this.options = options;
+        this.onProgress = null;
+      }
+      
+      async load(url) {
+        // Simulate loading progress
+        for (let i = 0; i <= 10; i++) {
+          if (this.onProgress) {
+            this.onProgress(i / 10, `Loading XRAI file (${i * 10}%)...`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // Create mock scene
+        const scene = new MockXRAIScene();
+        
+        // Create Three.js object
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        
+        // Add some animation
+        scene._update = (deltaTime) => {
+          cube.rotation.x += deltaTime * 0.5;
+          cube.rotation.y += deltaTime * 0.3;
+        };
+        
+        return {
+          scene: scene,
+          threeObject: cube,
+          metadata: {
+            title: 'Demo XRAI Scene',
+            description: 'This is a demo scene for the XRAI viewer.',
+            creator: 'XRAI Viewer',
+            created: new Date().toISOString(),
+            version: '1.0'
+          }
+        };
+      }
+    }
+    
+    // Mock XRAI Scene for demo purposes
+    class MockXRAIScene {
+      constructor() {
+        this.quality = 1.0;
+        this.aiEnabled = true;
+        this.vfxEnabled = true;
+        this.viewMode = 'normal';
+        this.wireframe = false;
+        this._update = null;
+      }
+      
+      setQuality(quality) {
+        console.log(`Setting quality to ${quality}`);
+        this.quality = quality;
+      }
+      
+      setAIEnabled(enabled) {
+        console.log(`Setting AI enabled to ${enabled}`);
+        this.aiEnabled = enabled;
+      }
+      
+      setVFXEnabled(enabled) {
+        console.log(`Setting VFX enabled to ${enabled}`);
+        this.vfxEnabled = enabled;
+      }
+      
+      setViewMode(mode) {
+        console.log(`Setting view mode to ${mode}`);
+        this.viewMode = mode;
+      }
+      
+      setWireframe(enabled) {
+        console.log(`Setting wireframe to ${enabled}`);
+        this.wireframe = enabled;
+      }
+      
+      updateContext(context) {
+        // In a real implementation, this would update the scene based on context
+      }
+      
+      update(deltaTime) {
+        if (this._update) {
+          this._update(deltaTime);
+        }
+      }
+      
+      triggerInteraction(interaction) {
+        console.log('Interaction triggered:', interaction);
+      }
+      
+      triggerVFX(effect, position) {
+        console.log(`VFX '${effect}' triggered at position:`, position);
+      }
+    }
+  </script>
+</body>
+</html>
