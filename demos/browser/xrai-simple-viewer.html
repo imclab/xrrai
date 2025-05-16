@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XRAI Simple Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        
+        #scene-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ui-panel {
+            position: absolute;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        
+        .controls {
+            bottom: 20px;
+            left: 20px;
+        }
+        
+        .file-selector {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .info {
+            top: 20px;
+            left: 20px;
+            max-width: 300px;
+        }
+        
+        button, select {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        button:hover, select:hover {
+            background: #45a049;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="scene-container"></div>
+    
+    <div class="ui-panel info">
+        <h2>XRAI Simple Viewer</h2>
+        <p>Select a sample from the dropdown or upload your own XRAI file.</p>
+        <div id="scene-info"></div>
+    </div>
+    
+    <div class="ui-panel controls">
+        <button id="btn-toggle-ai">Toggle AI</button>
+        <button id="btn-toggle-vfx">Toggle VFX</button>
+        <button id="btn-reset">Reset Camera</button>
+    </div>
+    
+    <div class="ui-panel file-selector">
+        <select id="sample-selector">
+            <option value="">Select a sample...</option>
+            <option value="samples/test-cube.json">Test Cube (JSON)</option>
+            <option value="samples/test-cube.xrai">Test Cube (XRAI)</option>
+            <option value="samples/basic-scene.xrai">Basic Scene</option>
+            <option value="samples/ai-interactive.xrai">AI Interactive</option>
+            <option value="samples/vfx-particles.xrai">VFX Particles</option>
+        </select>
+        <p>Or upload your own:</p>
+        <input type="file" id="file-input" accept=".xrai,.json">
+    </div>
+    
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading XRAI content...</p>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // Main variables
+        let scene, camera, renderer, controls;
+        let animationController, adaptationController;
+        let currentXRAIData = null;
+        let aiEnabled = true;
+        let vfxEnabled = true;
+        
+        // Initialize the scene
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                60, 
+                window.innerWidth / window.innerHeight, 
+                0.1, 
+                2000
+            );
+            camera.position.set(0, 1.6, 3);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // Add renderer to DOM
+            const container = document.getElementById('scene-container');
+            container.appendChild(renderer.domElement);
+            
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Add grid helper
+            const gridHelper = new THREE.GridHelper(10, 10);
+            scene.add(gridHelper);
+            
+            // Initialize controllers
+            initControllers();
+            
+            // Add event listeners
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('btn-toggle-ai').addEventListener('click', toggleAI);
+            document.getElementById('btn-toggle-vfx').addEventListener('click', toggleVFX);
+            document.getElementById('btn-reset').addEventListener('click', resetCamera);
+            document.getElementById('sample-selector').addEventListener('change', loadSelectedSample);
+            document.getElementById('file-input').addEventListener('change', loadFileInput);
+            
+            // Start animation loop
+            animate();
+            
+            console.log('XRAI viewer initialized');
+        }
+        
+        // Initialize controllers
+        function initControllers() {
+            // Simple animation controller
+            animationController = {
+                animations: new Map(),
+                
+                addRotation: function(object, axis = {x: 0, y: 1, z: 0}, speed = 1.0) {
+                    this.animations.set(object.uuid, {
+                        type: 'rotation',
+                        object: object,
+                        axis: axis,
+                        speed: speed
+                    });
+                },
+                
+                update: function(deltaTime) {
+                    if (!aiEnabled) return;
+                    
+                    this.animations.forEach(anim => {
+                        if (anim.type === 'rotation') {
+                            anim.object.rotation.x += anim.axis.x * anim.speed * deltaTime;
+                            anim.object.rotation.y += anim.axis.y * anim.speed * deltaTime;
+                            anim.object.rotation.z += anim.axis.z * anim.speed * deltaTime;
+                        }
+                    });
+                },
+                
+                clear: function() {
+                    this.animations.clear();
+                }
+            };
+            
+            // Simple adaptation controller
+            adaptationController = {
+                adaptiveObjects: new Map(),
+                lastTime: 0,
+                
+                addAdaptiveObject: function(object, properties) {
+                    this.adaptiveObjects.set(object.uuid, {
+                        object: object,
+                        properties: properties
+                    });
+                },
+                
+                update: function(deltaTime, time) {
+                    if (!aiEnabled) return;
+                    
+                    this.adaptiveObjects.forEach(obj => {
+                        // Apply simple color adaptation based on time
+                        if (obj.properties.includes('color') && obj.object.material) {
+                            const hue = (Math.sin(time * 0.5) + 1) / 2;
+                            obj.object.material.color.setHSL(hue, 1, 0.5);
+                        }
+                        
+                        // Apply simple scale adaptation based on time
+                        if (obj.properties.includes('scale')) {
+                            const scale = 1 + 0.2 * Math.sin(time * 2);
+                            obj.object.scale.set(scale, scale, scale);
+                        }
+                    });
+                },
+                
+                clear: function() {
+                    this.adaptiveObjects.clear();
+                }
+            };
+        }
+        
+        // Load XRAI data
+        function loadXRAIData(data) {
+            // Store the data
+            currentXRAIData = data;
+            
+            // Clear the scene except for lights and helpers
+            clearScene();
+            
+            // Clear controllers
+            animationController.clear();
+            adaptationController.clear();
+            
+            // Update scene info
+            updateSceneInfo(data);
+            
+            // Process materials
+            const materials = {};
+            if (data.materials) {
+                data.materials.forEach(material => {
+                    materials[material.id] = createMaterial(material);
+                });
+            }
+            
+            // Process objects
+            if (data.objects) {
+                processObjects(data.objects, materials);
+            }
+            
+            // Reset camera
+            resetCamera();
+        }
+        
+        // Update scene info display
+        function updateSceneInfo(data) {
+            const sceneInfoElement = document.getElementById('scene-info');
+            if (data.metadata) {
+                sceneInfoElement.innerHTML = `
+                    <h3>${data.metadata.title || 'Untitled Scene'}</h3>
+                    <p>${data.metadata.description || 'No description available'}</p>
+                `;
+            } else {
+                sceneInfoElement.innerHTML = '<p>No metadata available for this scene</p>';
+            }
+        }
+        
+        // Create material from XRAI data
+        function createMaterial(materialData) {
+            // Default to standard material
+            return new THREE.MeshStandardMaterial({
+                color: materialData.color || 0xffffff,
+                roughness: materialData.roughness !== undefined ? materialData.roughness : 0.5,
+                metalness: materialData.metalness !== undefined ? materialData.metalness : 0.0
+            });
+        }
+        
+        // Process objects from XRAI data
+        function processObjects(objects, materials) {
+            objects.forEach(objectData => {
+                let geometry;
+                
+                // Create geometry based on type
+                switch (objectData.geometry.type) {
+                    case 'box':
+                        geometry = new THREE.BoxGeometry(
+                            objectData.geometry.width || 1,
+                            objectData.geometry.height || 1,
+                            objectData.geometry.depth || 1
+                        );
+                        break;
+                    case 'sphere':
+                        geometry = new THREE.SphereGeometry(
+                            objectData.geometry.radius || 1,
+                            objectData.geometry.widthSegments || 32,
+                            objectData.geometry.heightSegments || 16
+                        );
+                        break;
+                    case 'plane':
+                        geometry = new THREE.PlaneGeometry(
+                            objectData.geometry.width || 1,
+                            objectData.geometry.height || 1
+                        );
+                        break;
+                    default:
+                        console.warn(`Unsupported geometry type: ${objectData.geometry.type}`);
+                        return;
+                }
+                
+                // Get material
+                const material = materials[objectData.material] || new THREE.MeshStandardMaterial();
+                
+                // Create mesh
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                // Set name if provided
+                if (objectData.name) {
+                    mesh.name = objectData.name;
+                }
+                
+                // Set userData for identification
+                mesh.userData = {
+                    id: objectData.id,
+                    type: objectData.type || 'object',
+                    tags: objectData.tags || []
+                };
+                
+                // Set position
+                if (objectData.position) {
+                    mesh.position.set(
+                        objectData.position.x || 0,
+                        objectData.position.y || 0,
+                        objectData.position.z || 0
+                    );
+                }
+                
+                // Set rotation
+                if (objectData.rotation) {
+                    mesh.rotation.set(
+                        THREE.MathUtils.degToRad(objectData.rotation.x || 0),
+                        THREE.MathUtils.degToRad(objectData.rotation.y || 0),
+                        THREE.MathUtils.degToRad(objectData.rotation.z || 0)
+                    );
+                }
+                
+                // Set scale
+                if (objectData.scale) {
+                    mesh.scale.set(
+                        objectData.scale.x || 1,
+                        objectData.scale.y || 1,
+                        objectData.scale.z || 1
+                    );
+                }
+                
+                // Add to scene
+                scene.add(mesh);
+                
+                // Add animations if needed
+                if (objectData.animated) {
+                    animationController.addRotation(
+                        mesh,
+                        objectData.rotationAxis || {x: 0, y: 1, z: 0},
+                        objectData.rotationSpeed || 1.0
+                    );
+                }
+                
+                // Add AI adaptations if needed
+                if (objectData.adaptive) {
+                    const adaptiveProperties = [];
+                    
+                    if (objectData.adaptiveColor) {
+                        adaptiveProperties.push('color');
+                    }
+                    
+                    if (objectData.adaptiveScale) {
+                        adaptiveProperties.push('scale');
+                    }
+                    
+                    adaptationController.addAdaptiveObject(mesh, adaptiveProperties);
+                }
+            });
+            
+            // Process AI components if available
+            if (currentXRAIData.ai) {
+                processAIComponents(currentXRAIData.ai);
+            }
+        }
+        
+        // Process AI components
+        function processAIComponents(aiData) {
+            if (aiData.adaptiveObjects) {
+                aiData.adaptiveObjects.forEach(adaptiveObj => {
+                    // Find the object in the scene
+                    let targetObject = null;
+                    scene.traverse(obj => {
+                        if (obj.userData && obj.userData.id === adaptiveObj.id) {
+                            targetObject = obj;
+                        }
+                    });
+                    
+                    if (targetObject) {
+                        // Extract adaptive properties
+                        const properties = adaptiveObj.adaptiveProperties.map(prop => prop.property);
+                        
+                        // Add to adaptation controller
+                        adaptationController.addAdaptiveObject(targetObject, properties);
+                    }
+                });
+            }
+        }
+        
+        // Clear scene except for lights and helpers
+        function clearScene() {
+            // Remove objects that aren't lights or helpers
+            const objectsToRemove = [];
+            scene.traverse(object => {
+                if (!(object instanceof THREE.Light) && 
+                    !(object instanceof THREE.GridHelper) && 
+                    !(object instanceof THREE.Camera) &&
+                    object !== scene) {
+                    objectsToRemove.push(object);
+                }
+            });
+            
+            objectsToRemove.forEach(object => {
+                scene.remove(object);
+                
+                // Dispose of geometries and materials
+                if (object.geometry) {
+                    object.geometry.dispose();
+                }
+                
+                if (object.material) {
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(material => material.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+            });
+        }
+        
+        // Load selected sample
+        function loadSelectedSample() {
+            const selector = document.getElementById('sample-selector');
+            const selectedValue = selector.value;
+            
+            if (!selectedValue) return;
+            
+            // Show loading indicator
+            showLoading(true);
+            
+            // Reset file input
+            document.getElementById('file-input').value = '';
+            
+            // Load the selected file
+            fetch(selectedValue)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    // Check if this is a JSON or binary file
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // For now, just handle as JSON
+                        return response.json().catch(e => {
+                            console.error('Failed to parse as JSON:', e);
+                            return { 
+                                metadata: { 
+                                    title: 'Error Loading File', 
+                                    description: 'Could not parse the file format.' 
+                                } 
+                            };
+                        });
+                    }
+                })
+                .then(data => {
+                    loadXRAIData(data);
+                    showLoading(false);
+                })
+                .catch(error => {
+                    console.error('Error loading sample:', error);
+                    showLoading(false);
+                    alert(`Error loading sample: ${error.message}`);
+                });
+        }
+        
+        // Load file from input
+        function loadFileInput() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length === 0) return;
+            
+            const file = fileInput.files[0];
+            
+            // Show loading indicator
+            showLoading(true);
+            
+            // Reset sample selector
+            document.getElementById('sample-selector').value = '';
+            
+            // Read the file
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    loadXRAIData(data);
+                } catch (error) {
+                    console.error('Error parsing file:', error);
+                    alert(`Error parsing file: ${error.message}`);
+                }
+                showLoading(false);
+            };
+            
+            reader.onerror = function() {
+                console.error('Error reading file');
+                alert('Error reading file');
+                showLoading(false);
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Toggle AI features
+        function toggleAI() {
+            aiEnabled = !aiEnabled;
+            document.getElementById('btn-toggle-ai').textContent = 
+                aiEnabled ? 'Disable AI' : 'Enable AI';
+        }
+        
+        // Toggle VFX features
+        function toggleVFX() {
+            vfxEnabled = !vfxEnabled;
+            
+            // Toggle visibility of VFX objects
+            scene.traverse(object => {
+                if (object.userData && 
+                    (object.userData.type === 'vfx' || 
+                     (object.userData.tags && object.userData.tags.includes('vfx')))) {
+                    object.visible = vfxEnabled;
+                }
+            });
+            
+            document.getElementById('btn-toggle-vfx').textContent = 
+                vfxEnabled ? 'Disable VFX' : 'Enable VFX';
+        }
+        
+        // Reset camera position
+        function resetCamera() {
+            camera.position.set(0, 1.6, 3);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+        }
+        
+        // Show/hide loading indicator
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // Handle window resize
+        function onWindowResize() {
+            // Update camera
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            
+            // Update renderer
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            console.log('Window resized:', window.innerWidth, 'x', window.innerHeight);
+        }
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Calculate delta time
+            const time = performance.now() / 1000;
+            const deltaTime = Math.min(0.05, time - (adaptationController.lastTime || time));
+            adaptationController.lastTime = time;
+            
+            // Update controllers
+            animationController.update(deltaTime);
+            adaptationController.update(deltaTime, time);
+            
+            // Update controls
+            controls.update();
+            
+            // Render scene
+            renderer.render(scene, camera);
+        }
+        
+        // Create a test cube if no sample is loaded
+        function createTestCube() {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                metalness: 0.3,
+                roughness: 0.4
+            });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(0, 0.5, 0);
+            cube.userData = { id: 'test-cube', type: 'object' };
+            scene.add(cube);
+            
+            // Add rotation animation
+            animationController.addRotation(cube);
+            
+            // Add color adaptation
+            adaptationController.addAdaptiveObject(cube, ['color']);
+            
+            // Update scene info
+            document.getElementById('scene-info').innerHTML = `
+                <h3>Test Cube</h3>
+                <p>This is a simple test cube with rotation and color animation.</p>
+            `;
+        }
+        
+        // Initialize the scene when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            init();
+            createTestCube();
+        });
+    </script>
+</body>
+</html>

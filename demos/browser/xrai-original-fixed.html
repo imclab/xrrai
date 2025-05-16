@@ -3,25 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRAI Format Viewer</title>
+    <title>XRAI Format Viewer (Original Fixed)</title>
     <style>
-        html, body {
+        * {
             margin: 0;
             padding: 0;
-            overflow: hidden;
+            box-sizing: border-box;
+        }
+        
+        html, body {
             width: 100%;
             height: 100%;
-            font-family: Arial, sans-serif;
-            background-color: #000000;
+            overflow: hidden;
+            background-color: #000;
         }
+        
         #container {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
         }
+        
         #info {
             position: absolute;
             top: 10px;
@@ -33,6 +37,7 @@
             max-width: 400px;
             z-index: 100;
         }
+        
         #controls {
             position: absolute;
             bottom: 10px;
@@ -43,6 +48,7 @@
             border-radius: 5px;
             z-index: 100;
         }
+        
         #file-selector {
             position: absolute;
             top: 10px;
@@ -53,6 +59,7 @@
             border-radius: 5px;
             z-index: 100;
         }
+        
         button, select {
             background-color: #4CAF50;
             border: none;
@@ -66,9 +73,11 @@
             cursor: pointer;
             border-radius: 4px;
         }
+        
         button:hover, select:hover {
             background-color: #45a049;
         }
+        
         #loading {
             position: absolute;
             top: 50%;
@@ -81,6 +90,7 @@
             display: none;
             z-index: 1000;
         }
+        
         .spinner {
             border: 5px solid #f3f3f3;
             border-top: 5px solid #3498db;
@@ -90,6 +100,7 @@
             animation: spin 2s linear infinite;
             margin: 10px auto;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -140,7 +151,7 @@
     <script>
         // Wait for DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', async function() {
-            // Show loading indicator
+            // Show/hide loading indicator functions
             const loadingElement = document.getElementById('loading');
             const showLoading = () => { loadingElement.style.display = 'block'; };
             const hideLoading = () => { loadingElement.style.display = 'none'; };
@@ -168,7 +179,7 @@
             
             // Create scene with proper background
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x000000);
+            scene.background = new THREE.Color(0x111111);
             
             // Create camera with better parameters for 3D viewing
             const camera = new THREE.PerspectiveCamera(
@@ -224,6 +235,14 @@
             directionalLight.position.set(1, 1, 1);
             scene.add(directionalLight);
             
+            // Create animation controller
+            const animationController = new XRAIAnimationController();
+            animationController.initialize(scene);
+            
+            // Create adaptation controller
+            const adaptationController = new XRAIAdaptationController();
+            adaptationController.initialize(scene, camera);
+            
             // Create XRAI loader
             class XRAILoader {
                 constructor(scene, camera, animationController, adaptationController) {
@@ -275,15 +294,31 @@
                 
                 clearScene() {
                     // Remove all objects except lights and camera
-                    while(this.scene.children.length > 0) {
-                        const object = this.scene.children[0];
-                        if (object instanceof THREE.Light || object instanceof THREE.Camera) {
-                            this.scene.children.shift(); // Remove from beginning
-                            this.scene.add(object); // Add back to end
-                        } else {
-                            this.scene.remove(object);
+                    const objectsToRemove = [];
+                    scene.traverse(object => {
+                        if (!(object instanceof THREE.Light) && 
+                            !(object instanceof THREE.Camera) && 
+                            object !== scene) {
+                            objectsToRemove.push(object);
                         }
-                    }
+                    });
+                    
+                    objectsToRemove.forEach(object => {
+                        scene.remove(object);
+                        
+                        // Dispose of geometries and materials
+                        if (object.geometry) {
+                            object.geometry.dispose();
+                        }
+                        
+                        if (object.material) {
+                            if (Array.isArray(object.material)) {
+                                object.material.forEach(material => material.dispose());
+                            } else {
+                                object.material.dispose();
+                            }
+                        }
+                    });
                     
                     // Reset camera position
                     this.camera.position.set(0, 1.6, 3);
@@ -522,8 +557,8 @@
                     }
                 }
                 
-                async decode(buffer) {
-                    // Check if this is a binary XRAI file
+                decode(buffer) {
+                    // Check if this is a binary XRAI file or JSON
                     const view = new DataView(buffer);
                     
                     // Check for XRAI magic number
@@ -556,9 +591,11 @@
                         },
                         objects: [
                             {
+                                id: 'default-cube',
                                 geometry: { type: 'box', width: 1, height: 1, depth: 1 },
                                 material: 'default',
-                                position: { x: 0, y: 0, z: 0 }
+                                position: { x: 0, y: 0, z: 0 },
+                                animated: true
                             }
                         ],
                         materials: [
@@ -676,17 +713,6 @@
             // Initial resize to ensure correct sizing
             handleResize();
             
-            // Create animation controller
-            const animationController = new XRAIAnimationController();
-            animationController.initialize(scene);
-            
-            // Create adaptation controller
-            const adaptationController = new XRAIAdaptationController();
-            adaptationController.initialize(scene, camera);
-            
-            // Create loader instance with controllers
-            const loader = new XRAILoader(scene, camera, animationController, adaptationController);
-            
             // Animation loop
             let lastTime = performance.now();
             function animate() {
@@ -710,6 +736,10 @@
             
             // Load default scene
             loader.load('samples/test-cube.json');
+            
+            // Add a grid helper for reference
+            const gridHelper = new THREE.GridHelper(10, 10);
+            scene.add(gridHelper);
         });
     </script>
 </body>
